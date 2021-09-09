@@ -8,7 +8,6 @@ app.use(express.static('public'))
 
 app.use(cors());
 
-//app.use('/api', require('../routes/api'));
 app.use('/', require('./routes/index'));
 
 app.listen(port, () => {

@@ -4,10 +4,11 @@ const fs = require('fs');
 /**
  * 
  * @param {string} title 
+ * @param {string} name 
  */
-const createEpub = async (title) => {
+const createEpub = async (title, name) => {
 
-    const content = JSON.parse(fs.readFileSync('texto.json', { encoding: 'utf-8' }));
+    const content = JSON.parse(fs.readFileSync(`textos/${name}.json`, { encoding: 'utf-8' }));
 
     const options = {
         title: title,

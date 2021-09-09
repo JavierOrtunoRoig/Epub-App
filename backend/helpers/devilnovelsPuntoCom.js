@@ -1,15 +1,76 @@
-const puppeteer = require('puppeteer');
-
 const fs = require('fs');
+
+const puppeteer = require('puppeteer');
+const { v4: uuidv4 } = require('uuid');
 
 /**
  * 
  * @param {string} url 
  * @param {number} numberChapter 
+ * @returns {number}
  */
 const downloadDevilnovelsChapter = async (url, numberChapter) => {
 
-    let it = 1;
+    let { iteracion, page, browser } = await initialConfiguration(url);
+
+    let capitulos = [];
+    await page.waitForSelector('a');
+
+    while (iteracion <= numberChapter) {
+
+        ({ iteracion, capitulos } = await proccessPageInformation(page, iteracion, capitulos)); // reasing nar variables
+
+    }
+
+    console.log('fin');
+
+    const id = uuidv4();
+    fs.writeFileSync(`textos/${id}.json`, JSON.stringify(capitulos), { encoding: 'utf-8' });
+
+    browser.close();
+
+    return id;
+};
+
+
+const proccessPageInformation = async (page, iteracion, capitulos) => {
+
+    try {
+
+        const titulo = await getTitle(page);
+
+        let texto = await getText(page);
+        texto += await completeText(page);
+
+        const capitulo = {
+            title: titulo,
+            data: texto
+        };
+
+        console.log(capitulo.title);
+
+        capitulos.push(capitulo);
+        iteracion++;
+
+        const url = await nextUrl(page);
+        if (url !== undefined) {
+            await page.goto(url);
+        }
+
+    } catch (e) {
+        console.log(e);
+    }
+
+    return {
+        iteracion,
+        capitulos
+    }
+
+}
+
+const initialConfiguration = async (url) => {
+
+    let iteracion = 1;
 
     const browser = await puppeteer.launch({ headless: false });
     const page = await browser.newPage();
@@ -28,98 +89,80 @@ const downloadDevilnovelsChapter = async (url, numberChapter) => {
     await page.setViewport(dimensions);
     await page.goto(url);
 
-    const capitulos = [];
-    await page.waitForSelector('a');
+    return {
+        browser,
+        iteracion,
+        page
+    }
+}
 
-    while (it <= numberChapter) {
+const getTitle = (page) => {
+    return page.$eval('h1', (t) => {
 
-        try {
+        return t.innerHTML;
 
-            const titulo = await page.$eval('h1', (t) => {
+    });
+}
 
-                return t.innerHTML;
+const getText = (page) => {
+    return page.$$eval('.entry-content > p', (t) => {
 
-            });
+        let ret = '';
 
-            let texto = await page.$$eval('.entry-content > p', (t) => {
+        for (let i = 1; i < t.length; i++) {
 
-                let ret = '';
-
-                for (let i = 1; i < t.length; i++) {
-
-                    ret += t[i].outerHTML;
-
-                }
-
-                return ret;
-
-            });
-
-            texto += await page.$$eval('.entry-content > div', (t) => {
-
-                let ret = '';
-
-                for (let i = 1; i < t.length; i++) {
-
-                    const aux = t[i].outerHTML;
-                    if (!aux.includes('Bookmark')) {
-
-                        ret += aux;
-
-                    }
-
-                }
-
-                ret = ret.replaceAll('<div>', '<p>');
-                ret = ret.replaceAll('<div />', '<p/>');
-                ret = ret.replaceAll('<div />', '<p/>');
-
-                return ret;
-
-            });
-
-            const capitulo = {
-                title: titulo,
-                data: texto
-            };
-
-            console.log(capitulo.title);
-
-            capitulos.push(capitulo);
-
-            it++;
-
-            url = await page.$$eval('a[href^="https://devilnovels.com/emperors-domination/"]', (t) => {
-
-                if (t.find(enlace => enlace.href.includes('comme'))) {
-
-                    return t[3].href;
-
-                } else {
-
-                    return t[2].href;
-
-                }
-
-            });
-
-            await page.goto(url);
-
-        } catch (e) {
-
-            console.log(e);
+            ret += t[i].outerHTML;
 
         }
 
-    }
+        return ret;
 
-    console.log('fin');
+    });
+}
 
-    fs.writeFileSync('texto.json', JSON.stringify(capitulos), { encoding: 'utf-8' });
+const completeText = (page) => {
+    return page.$$eval('.entry-content > div', (t) => {
 
-    browser.close();
+        let ret = '';
 
-};
+        for (let i = 1; i < t.length; i++) {
+
+            const aux = t[i].outerHTML;
+            if (!aux.includes('Bookmark')) {
+
+                ret += aux;
+
+            }
+
+        }
+
+        ret = ret.replaceAll('<div>', '<p>');
+        ret = ret.replaceAll('<div />', '<p/>');
+        ret = ret.replaceAll('<div />', '<p/>');
+
+        return ret;
+
+    });
+}
+
+const nextUrl = (page) => {
+    //url = await page.$$eval('a[href^="https://devilnovels.com/emperors-domination/"]', (t) => {
+    return page.$$eval('div > div > div.wp-post-navigation > div.wp-post-navigation-next > a', (t) => {
+
+        if (t[3] === undefined) return
+
+        if (t.find(enlace => enlace.href.includes('comme'))) {
+
+            return t[3].href;
+
+        } else {
+
+            return t[2].href;
+
+        }
+
+    });
+}
 
 module.exports = {
     downloadDevilnovelsChapter

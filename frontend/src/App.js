@@ -17,16 +17,24 @@ function App () {
 
         e.preventDefault();
 
-        axios.get( 'http://localhost:4000/api/devilnovel', {
+        axios({
+            url: 'http://localhost:4000/api/devilnovel',
+            method: 'GET',
             params: {
                 title,
                 url,
                 numberChapter
-            }
+            },
+            responseType: 'blob'
         })
-            .then( data => {
+            .then( ( response ) => {
 
-                console.log( data );
+                const newUrl = window.URL.createObjectURL( new Blob([response.data]) );
+                const link = document.createElement( 'a' );
+                link.href = newUrl;
+                link.setAttribute( 'download', `${title}.epub` ); // or any other extension
+                document.body.appendChild( link );
+                link.click();
 
             });
 
