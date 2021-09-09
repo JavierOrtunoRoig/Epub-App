@@ -1,5 +1,6 @@
 import React from 'react';
 import axios from '../node_modules/axios/index';
+
 import { useForm } from './hooks/useForm';
 import './styles.css';
 
@@ -18,7 +19,7 @@ function App () {
         e.preventDefault();
 
         axios({
-            url: 'http://localhost:4000/api/devilnovel',
+            url: `${process.env.REACT_APP_URL}/api/devilnovel`,
             method: 'GET',
             params: {
                 title,
