@@ -19,7 +19,6 @@ const downloadDevilnovelsChapter = async (url, numberChapter) => {
     while (iteracion <= numberChapter) {
 
         ({ iteracion, capitulos } = await proccessPageInformation(page, iteracion, capitulos)); // reasing nar variables
-
     }
 
     console.log('fin');
@@ -32,7 +31,6 @@ const downloadDevilnovelsChapter = async (url, numberChapter) => {
     return id;
 };
 
-
 const proccessPageInformation = async (page, iteracion, capitulos) => {
 
     try {
@@ -40,7 +38,9 @@ const proccessPageInformation = async (page, iteracion, capitulos) => {
         const titulo = await getTitle(page);
 
         let texto = await getText(page);
-        texto += await completeText(page);
+        //texto += await completeText(page); a veces hay que comentarlo y otras veces no
+
+        //console.log(texto);
 
         const capitulo = {
             title: titulo,
@@ -54,6 +54,7 @@ const proccessPageInformation = async (page, iteracion, capitulos) => {
 
         const url = await nextUrl(page);
         if (url !== undefined) {
+            console.log(url)
             await page.goto(url);
         }
 
@@ -72,7 +73,13 @@ const initialConfiguration = async (url) => {
 
     let iteracion = 1;
 
-    const browser = await puppeteer.launch({ headless: false });
+    const browser = await puppeteer.launch({
+        //headless: false,
+        args: [
+            '--no-sandbox',
+            //'--disable-setuid-sandbox',
+        ]
+    });
     const page = await browser.newPage();
 
     // Get the "viewport" of the page, as reported by the page.
@@ -104,7 +111,7 @@ const getTitle = (page) => {
     });
 }
 
-const getText = (page) => {
+/* const getText = (page) => {
     return page.$$eval('.entry-content > p', (t) => {
 
         let ret = '';
@@ -116,6 +123,14 @@ const getText = (page) => {
         }
 
         return ret;
+
+    });
+} */
+
+const getText = (page) => {
+    return page.$$eval('.entry-content', (t) => {
+
+        return t[0].outerHTML;
 
     });
 }
@@ -149,17 +164,24 @@ const nextUrl = (page) => {
     //url = await page.$$eval('a[href^="https://devilnovels.com/emperors-domination/"]', (t) => {
     return page.$$eval('div > div > div.wp-post-navigation > div.wp-post-navigation-next > a', (t) => {
 
-        if (t[3] === undefined) return
-
-        if (t.find(enlace => enlace.href.includes('comme'))) {
-
-            return t[3].href;
-
+        if (t.length <= 1) {
+            return t[0].href
         } else {
 
-            return t[2].href;
+            if (t[3] === undefined) return
+
+            if (t.find(enlace => enlace.href.includes('comme'))) {
+
+                return t[3].href;
+
+            } else {
+
+                return t[2].href;
+
+            }
 
         }
+
 
     });
 }
