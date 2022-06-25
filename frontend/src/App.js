@@ -8,18 +8,21 @@ function App () {
 
     const [inputForm, handleForm] = useForm({
         title: '',
+        servidor: '',
         url: '',
         numberChapter: ''
     });
 
-    const { title, url, numberChapter } = inputForm;
+    const { title, url, numberChapter, servidor } = inputForm;
+
+    console.log( servidor );
 
     const handleSubmit = ( e ) => {
 
         e.preventDefault();
 
         axios({
-            url: `${process.env.REACT_APP_URL}/api/devilnovel`,
+            url: `${process.env.REACT_APP_URL}/api/novelasligeras`,
             method: 'GET',
             params: {
                 title,
@@ -37,6 +40,11 @@ function App () {
                 document.body.appendChild( link );
                 link.click();
 
+            })
+            .catch( ( error ) => {
+
+                console.log( error );
+
             });
 
     };
@@ -44,8 +52,9 @@ function App () {
     return (
         <form className="container">
             <h1> Epub App </h1>
-            <select className="form-select" name="paginas">
-                <option value="Devilnovels"> Devilnovels </option>
+            <select className="form-select" name="servidor">
+                <option value="devilnovel"> Devilnovels </option>
+                <option value="novelasligeras"> Novelas Ligeras </option>
             </select>
             <input
                 className="form-control"

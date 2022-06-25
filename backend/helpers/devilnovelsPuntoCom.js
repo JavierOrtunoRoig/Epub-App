@@ -11,6 +11,7 @@ const { v4: uuidv4 } = require('uuid');
  */
 const downloadDevilnovelsChapter = async (url, numberChapter) => {
 
+    // creamos la configuración inicial de puppeteer
     let { iteracion, page, browser } = await initialConfiguration(url);
 
     let capitulos = [];
